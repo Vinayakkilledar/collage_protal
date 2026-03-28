@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Teacher Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="dashboard-page">
+    <nav class="navbar">
+        <div class="logo">Teacher Portal</div>
+        <button onclick="logout()" class="btn-primary">Logout</button>
+    </nav>
+    <main class="dashboard-container" style="padding: 2rem 5%; text-align: center; max-width: 900px; margin: 0 auto;">
+        
+        <!-- PROFILE SECTION -->
+        <div class="glass-card" style="margin-bottom: 2rem; text-align: left; padding: 2rem;">
+            <h3 style="margin-bottom: 1rem;">My Profile</h3>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <input type="text" id="prof-name" placeholder="Update Name" style="padding: 0.8rem; border-radius: 5px; background: rgba(15,23,42,0.5); color: white; border: 1px solid rgba(255,255,255,0.2);">
+                <input type="text" id="prof-mobile" placeholder="Update Mobile Number" style="padding: 0.8rem; border-radius: 5px; background: rgba(15,23,42,0.5); color: white; border: 1px solid rgba(255,255,255,0.2);">
+                <button onclick="updateProfile()" class="btn-primary" style="padding: 0.8rem 1.5rem;">Save Details</button>
+            </div>
+            <p id="prof-msg" style="color: #a5b4fc; margin-top: 10px; font-size: 0.9em;"></p>
+        </div>
+
+        <h2 style="margin-bottom: 2rem;">Class Management</h2>
+        
+        <!-- FILTER SECTION -->
+        <div class="glass-card" style="margin-bottom: 2rem; text-align: left; padding: 2rem;">
+            <h3 style="margin-bottom: 1rem;">Select Sem & Division</h3>
+            <div style="display: flex; gap: 10px;">
+                <select id="filter-sem" style="padding: 0.8rem; border-radius: 5px; background: rgba(15,23,42,0.5); color: white; border: 1px solid rgba(255,255,255,0.2);">
+                    <option value="">Select Sem 1-8</option>
+                    <option value="1">Sem 1</option><option value="2">Sem 2</option><option value="3">Sem 3</option><option value="4">Sem 4</option>
+                    <option value="5">Sem 5</option><option value="6">Sem 6</option><option value="7">Sem 7</option><option value="8">Sem 8</option>
+                </select>
+                <select id="filter-sec" style="padding: 0.8rem; border-radius: 5px; background: rgba(15,23,42,0.5); color: white; border: 1px solid rgba(255,255,255,0.2);">
+                    <option value="">Select Division</option>
+                    <option value="A">Division A</option><option value="B">Division B</option><option value="C">Division C</option>
+                </select>
+                <button onclick="fetchStudents()" class="btn-primary" style="padding: 0.8rem 1.5rem;">Load Students</button>
+            </div>
+            
+            <div id="subject-selector-ui" style="display: none; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                <strong style="color: #a5b4fc; margin-right: 10px;">Select Subject to Mark:</strong>
+                <select id="active-subject" style="padding: 0.5rem; border-radius: 5px; background: rgba(15,23,42,0.5); color: white; border: 1px solid rgba(255,255,255,0.2);">
+                    <!-- Populated dynamically -->
+                </select>
+            </div>
+        </div>
+
+        <div id="students-list"></div>
+
+        <div class="glass-card" style="margin-top: 2rem; text-align: left; padding: 2rem;">
+            <h3 style="margin-bottom: 1rem;">Upload Material</h3>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <input type="text" id="mat-sub" placeholder="Subject Name" style="padding: 0.8rem; border-radius: 5px; background: rgba(15,23,42,0.5); color: white; border: 1px solid rgba(255,255,255,0.2);">
+                <input type="text" id="mat-sem" placeholder="Semester" style="padding: 0.8rem; border-radius: 5px; background: rgba(15,23,42,0.5); color: white; border: 1px solid rgba(255,255,255,0.2);">
+                <select id="mat-type" style="padding: 0.8rem; border-radius: 5px; background: rgba(15,23,42,0.5); color: white; border: 1px solid rgba(255,255,255,0.2);">
+                    <option value="Note">Notes</option>
+                    <option value="Assignment">Assignment</option>
+                    <option value="Feedback">Feedback</option>
+                </select>
+                <input type="text" id="mat-title" placeholder="Title" style="padding: 0.8rem; border-radius: 5px; background: rgba(15,23,42,0.5); color: white; border: 1px solid rgba(255,255,255,0.2);">
+                <input type="file" id="mat-file" accept=".pdf" style="padding: 0.8rem; border-radius: 5px; background: rgba(15,23,42,0.5); color: white; border: 1px solid rgba(255,255,255,0.2);">
+                <button onclick="uploadMaterial()" class="btn-primary" style="padding: 1rem; margin-top: 10px;">Upload PDF Material</button>
+            </div>
+        </div>
+    </main>
+    <script>
+        const token = localStorage.getItem('token');
+        if(!token || localStorage.getItem('role') !== 'teacher') window.location.href = 'auth.html';
+        
+        async function updateProfile() {
+            const name = document.getElementById('prof-name').value;
+            const mobile = document.getElementById('prof-mobile').value;
+            
+            try {
+                const res = await fetch(`/api/teacher/profile`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ name, mobile })
+                });
+                if(res.ok) {
+                    document.getElementById('prof-msg').innerText = "Details saved successfully!";
+                    setTimeout(() => document.getElementById('prof-msg').innerText = "", 3000);
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function fetchStudents() {
+            const sem = document.getElementById('filter-sem').value;
+            const sec = document.getElementById('filter-sec').value;
+            if(!sem || !sec) return alert("Please select Sem and Division");
+            
+            const res = await fetch(`/api/teacher/students?sem=${sem}&section=${sec}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            
+            // Extract unique subjects
+            const uniqueSubjects = new Set();
+            data.forEach(s => {
+                if(s.subjects) s.subjects.forEach(sub => uniqueSubjects.add(sub));
+            });
+
+            // Populate subject dropdown
+            const subjSelect = document.getElementById('active-subject');
+            subjSelect.innerHTML = Array.from(uniqueSubjects).map(sub => `<option value="${sub}">${sub}</option>`).join('');
+            document.getElementById('subject-selector-ui').style.display = uniqueSubjects.size > 0 ? 'block' : 'none';
+
+            const container = document.getElementById('students-list');
+            container.innerHTML = data.map(s => `
+                <div class="glass-card" style="margin-bottom: 1rem; text-align: left; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <div>
+                        <h4 style="font-size: 1.2rem;">${s.user.name} <span style="font-size: 0.9em; color:#ccc;">(USN: ${s.user.usn || s.user.email})</span></h4>
+                        <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 5px;">Subjects: ${(s.subjects || []).join(', ')}</p>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="markAttendance('${s.user._id}', 'Present')" class="btn-primary" style="padding: 0.5rem 1rem;">Present</button>
+                        <button onclick="markAttendance('${s.user._id}', 'Absent')" style="padding: 0.5rem 1rem; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer;">Absent</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function markAttendance(studentId, status) {
+            const subject = document.getElementById('active-subject').value;
+            if(!subject) return alert("No subject selected. Make sure students have subjects enrolled.");
+            
+            await fetch(`/api/teacher/attendance`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ studentId, subject, status })
+            });
+            alert(`Marked ${status} for ${subject}`);
+        }
+
+        async function uploadMaterial() {
+            const subject = document.getElementById('mat-sub').value;
+            const sem = document.getElementById('mat-sem').value;
+            const type = document.getElementById('mat-type').value;
+            const title = document.getElementById('mat-title').value;
+            const fileInput = document.getElementById('mat-file');
+
+            if (!fileInput.files[0]) return alert("Please select a PDF file to upload.");
+
+            const formData = new FormData();
+            formData.append('subject', subject);
+            formData.append('sem', sem);
+            formData.append('type', type);
+            formData.append('title', title);
+            formData.append('pdfFile', fileInput.files[0]);
+
+            try {
+                const res = await fetch(`/api/teacher/material`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                
+                const data = await res.json();
+                
+                if(res.ok) {
+                    alert('PDF Material Uploaded Successfully!');
+                    document.getElementById('mat-file').value = '';
+                    document.getElementById('mat-title').value = '';
+                } else {
+                    alert('Upload Error: ' + (data.message || data.error || 'Unknown network error. Did you restart the server?'));
+                }
+            } catch(e) { 
+                console.error(e); 
+                alert('Network Error! Please check if the server is reachable and try again.');
+            }
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
